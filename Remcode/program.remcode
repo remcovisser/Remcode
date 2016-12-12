@@ -1,1 +1,4 @@
-﻿var x = 10
+﻿printLine ' The version is: '
+printLine version
+printLine test
+var x = 10
