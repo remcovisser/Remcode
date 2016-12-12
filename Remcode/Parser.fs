@@ -37,25 +37,31 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
     match words.Length = next with 
         | true -> printfn "The program has been executed" 
         | false ->
+            // Set variable used mutiple times in the parser
             let currentWord = words.[next] 
             // Check if current word exists in the dictionary
             match dictionary.ContainsKey currentWord with
-                | false -> printfn "Error: Unknow word: %s" currentWord
+                | false -> 
+                    printfn "Error: Unknow word: %s" currentWord
+                    let next' = next + 1
+                    parser words dictionary next' stack
                 | true ->
-                    let next' = 
+                    let next', dictionary', stack' = 
                         match currentWord with
                             // -- Printing
                             | "print" | "printLine" -> 
                                 let result, next' = 
                                     match (dictionary.ContainsKey words.[next+1]), (words.[next+1] = "'") with
-                                        // Unknow in dictionary, single word
-                                        | false, false -> words.[next+1], next
-                                        // Unknow in dictionary, string
+                                        // single word
+                                        | false, false ->
+                                             let next' = next + 2
+                                             words.[next+1], next'
+                                        // string
                                         | false, true ->
                                             let rec findBetweenQuotes position (value:string) ending = 
                                                 let ending' = ending + 1
                                                 match words.[position] with
-                                                    | "'" -> value, ending'
+                                                    | "'" -> value, ending'+2
                                                     | _ -> 
                                                         let position' = position + 1
                                                         let value' =
@@ -66,25 +72,47 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                             let position = next + 2
                                             let value2, ending2 = findBetweenQuotes position "" next
                                             value2, ending2
-                                        // Known in dictionary, corresponding value from stack
+                                        // single word from stack
                                         | true, false -> 
                                             let key = dictionary.Item words.[next+1]
                                             let value: string = string (stack.Item key)
-                                            value, next
+                                            let next' = next + 2
+                                            value, next'
                                 // Print the found value
                                 match currentWord with 
-                                    | "print" ->
-                                        printf "%s" result
-                                        next'+2
-                                    | "printLine" -> 
-                                        printfn "%s" result
-                                        next'+2
+                                    | "print" -> printf "%s" result
+                                    | "printLine" -> printfn "%s" result
+                                next', dictionary, stack
                             // -- Variable creation
-                            // -- Variable assignment
-                            // -- Basic math opperations
-                            | _ -> 
-                                printfn "\nError: Unknow action based on the word: %s in dictionary" currentWord 
-                                next+1
-
+                            | "var" -> 
+                                let next', stack', key = 
+                                    match words.[next+2] with
+                                        // Variable creation with value
+                                        | "=" -> 
+                                            let key = stack.Count+1
+                                            stack.Add(key, words.[next+3])
+                                            next+4, stack, key
+                                        // Variable creation without value
+                                        | _ -> next+2, stack, -1
+                                dictionary.Add(words.[next+1], key)
+                                next', dictionary, stack'
+                            | _ ->
+                                let next', stack', dictionary' =  
+                                    match words.[next+1] with
+                                        // Change variable data
+                                        | "=" -> 
+                                            let key = stack.Count+1
+                                            stack.Add(key, words.[next+2])
+                                            dictionary.[words.[next]] <- key
+                                            next+3, stack, dictionary
+                                        | _ ->
+                                            // If all the mathes failed
+                                            printfn "\nError: Unknow action based on the word: %s in dictionary" currentWord 
+                                            let next' = next + 1
+                                            next', stack, dictionary
+                                next', dictionary, stack'
+                            // -- Math opperations
+                            // -- If statements
+                            // -- Loops
                     // Go to the next step in the program
                     parser words dictionary next' stack

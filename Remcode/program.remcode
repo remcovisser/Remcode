@@ -1,4 +1,16 @@
 ﻿printLine ' The version is: '
 printLine version
 printLine test
+print Same
+printLine Row
+
 var x = 10
+var y
+var z
+y = 20
+z = 30
+z = 40
+
+printLine x
+printLine y
+printLine z
