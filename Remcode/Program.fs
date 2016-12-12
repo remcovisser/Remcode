@@ -1,7 +1,14 @@
-﻿// Learn more about F# at http://fsharp.org
-// See the 'F# Tutorial' project for more help.
+﻿module Program
 
-[<EntryPoint>]
-let main argv = 
-    printfn "%A" argv
-    0 // return an integer exit code
+open System
+open Parser
+open System.IO
+
+
+
+let programInput = File.ReadAllText("program.remcode");
+let program = getWords programInput
+
+let programOutput = parser program dictionary 0 stack
+
+Console.ReadLine();
