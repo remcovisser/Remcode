@@ -78,10 +78,15 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                             let value: string = string (stack.Item key)
                                             let next' = next + 2
                                             value, next'
+                                        // Skip, this should never happen
+                                        | true, true ->
+                                            let value = "Unknown data to print"
+                                            let next' = next + 2
+                                            value, next'
                                 // Print the found value
                                 match currentWord with 
                                     | "print" -> printf "%s" result
-                                    | "printLine" -> printfn "%s" result
+                                    | "printLine" | _ -> printfn "%s" result
                                 next', dictionary, stack
                             // -- Variable creation
                             | "var" -> 
