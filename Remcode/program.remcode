@@ -14,3 +14,13 @@ z = 40
 printLine x
 printLine y
 printLine z
+
+var b = 10 + 20
+printLine b
+
+
+
+/////////////
+var a = x + y
+print 50 + 20
+print x + y

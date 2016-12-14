@@ -20,6 +20,10 @@ dictionary.Add("var", -1)
 dictionary.Add("=", -1)
 dictionary.Add("print", -1)
 dictionary.Add("printLine", -1)
+dictionary.Add("+", -1)
+dictionary.Add("-", -1)
+dictionary.Add("/", -1)
+dictionary.Add("*", -1)
 dictionary.Add("version", 0)
 
 (*  Define the base stack
@@ -28,6 +32,16 @@ dictionary.Add("version", 0)
 *)
 let stack = new Dictionary<int, obj>()
 stack.Add(0, 0.01)
+
+
+// Math operators
+let mathOperators = ["+"; "-"; "/"; "*"]
+let doMaths number1 number2 operator = 
+    match operator with
+        | "+" -> number1 + number2
+        | "-" -> number1 - number2
+        | "/" -> number1 / number2
+        | "*" -> number1 * number2
 
 (*
     Parser
@@ -91,16 +105,24 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                             // -- Variable creation
                             | "var" -> 
                                 let next', stack', key = 
-                                    match words.[next+2] with
+                                    match words.[next+2], words.[next+4] with
+                                        // Math operator on variable creation
+                                        | "=", "+" ->
+                                            let result = doMaths (words.[next+3] |> float32) (words.[next+5] |> float32) words.[next+4]
+                                            let key = stack.Count+1
+                                            stack.Add(key, result)
+                                            next+6, stack, key
                                         // Variable creation with value
-                                        | "=" -> 
+                                        | "=", _-> 
                                             let key = stack.Count+1
                                             stack.Add(key, words.[next+3])
                                             next+4, stack, key
                                         // Variable creation without value
-                                        | _ -> next+2, stack, -1
+                                        | _ , _ -> next+2, stack, -1
                                 dictionary.Add(words.[next+1], key)
                                 next', dictionary, stack'
+                            // -- If statements
+                            // -- Loops
                             | _ ->
                                 let next', stack', dictionary' =  
                                     match words.[next+1] with
@@ -116,8 +138,5 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                             let next' = next + 1
                                             next', stack, dictionary
                                 next', dictionary, stack'
-                            // -- Math opperations
-                            // -- If statements
-                            // -- Loops
                     // Go to the next step in the program
                     parser words dictionary next' stack
