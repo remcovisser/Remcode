@@ -35,7 +35,7 @@ stack.Add(0, 0.01)
 
 
 // Math operators
-let mathOperators = ["+"; "-"; "/"; "*"]
+//let mathOperators = ["+"; "-"; "/"; "*"]
 let doMaths number1 number2 operator = 
     match operator with
         | "+" -> number1 + number2
@@ -107,11 +107,40 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                 let next', stack', key = 
                                     match words.[next+2], words.[next+4] with
                                         // Math operator on variable creation
-                                        | "=", "+" ->
-                                            let result = doMaths (words.[next+3] |> float32) (words.[next+5] |> float32) words.[next+4]
-                                            let key = stack.Count+1
-                                            stack.Add(key, result)
-                                            next+6, stack, key
+                                        | "=", ("+" | "-" | "*" | "/") ->
+                                            match (dictionary.ContainsKey words.[next+3]), (dictionary.ContainsKey words.[next+5]) with
+                                                | true, true ->
+                                                    let key1 = dictionary.Item words.[next+3]
+                                                    let value1 = stack.Item key1 :?> string |> float
+                                                    let key2 = dictionary.Item words.[next+5]
+                                                    let value2 = stack.Item key2 :?> string |> float
+                                                    let result = doMaths value1 value2 words.[next+4]
+                                                    let key = stack.Count+1
+                                                    stack.Add(key, result)
+                                                    next+6, stack, key
+                                                | true, false ->
+                                                    let key1 = dictionary.Item words.[next+3]
+                                                    let value1 = stack.Item key1 :?> string |> float
+                                                    let value2 = words.[next+5] |> float
+                                                    let result = doMaths value1 value2 words.[next+4]
+                                                    let key = stack.Count+1
+                                                    stack.Add(key, result)
+                                                    next+6, stack, key
+                                                 | false, true ->
+                                                     let key2 = dictionary.Item words.[next+5]
+                                                     let value1 = words.[next+3] |> float
+                                                     let value2 = stack.Item key2 :?> string |> float  
+                                                     let result = doMaths value1 value2 words.[next+4]
+                                                     let key = stack.Count+1
+                                                     stack.Add(key, result)
+                                                     next+6, stack, key
+                                                | false, false ->
+                                                    let value1 = words.[next+3] |> float
+                                                    let value2 = words.[next+5] |> float
+                                                    let result = doMaths value1 value2 words.[next+4]
+                                                    let key = stack.Count+1
+                                                    stack.Add(key, result)
+                                                    next+6, stack, key
                                         // Variable creation with value
                                         | "=", _-> 
                                             let key = stack.Count+1

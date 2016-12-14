@@ -15,12 +15,12 @@ printLine x
 printLine y
 printLine z
 
-var b = 10 + 20
+var a = 20 * 30
+var b = x + y
+var c = 20 * y
+var d = x * 30
+
+printLine a
 printLine b
-
-
-
-/////////////
-var a = x + y
-print 50 + 20
-print x + y
+printLine c
+printLine d
