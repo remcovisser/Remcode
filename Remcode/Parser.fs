@@ -4,9 +4,9 @@ open System.Collections.Generic
 
 (*  Return a string Array with all the words of the programm 
     | words are characters sepparted by a space
-    | spaces/breaks are removed *)
+    | spaces/breaks/tabs are removed *)
 let getWords (text: string) =
-     text.Split (' ','\n','\r')
+     text.Split (' ','\n','\r','\t')
      |> Array.filter(fun words -> words = "" |> not)
 
 (*  Define the base dictionary
@@ -24,6 +24,8 @@ dictionary.Add("+", -1)
 dictionary.Add("-", -1)
 dictionary.Add("/", -1)
 dictionary.Add("*", -1)
+dictionary.Add("while", -1)
+dictionary.Add("}", -1)
 dictionary.Add("version", 0)
 
 (*  Define the base stack
@@ -35,7 +37,6 @@ stack.Add(0, 0.01)
 
 
 // Math operators
-//let mathOperators = ["+"; "-"; "/"; "*"]
 let doMaths number1 number2 operator = 
     match operator with
         | "+" -> number1 + number2
@@ -43,13 +44,21 @@ let doMaths number1 number2 operator =
         | "/" -> number1 / number2
         | "*" -> number1 * number2
 
+// Statements
+let conditionResult var operator result =
+    match operator with
+    | "=" -> var = result
+    | "!=" -> var <> result
+    | ">" -> var > result
+    | "<" -> var < result
+
 (*
     Parser
 *)
 let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int) (stack: Dictionary<int, obj>) = 
     // Check if the program is finished
     match words.Length = next with 
-        | true -> printfn "The program has been executed" 
+        | true -> printfn "\nThe program has been executed" 
         | false ->
             // Set variable used mutiple times in the parser
             let currentWord = words.[next] 
@@ -64,7 +73,7 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                         match currentWord with
                             // -- Printing
                             | "print" | "printLine" -> 
-                                let result, next' = 
+                                let result, next' =
                                     match (dictionary.ContainsKey words.[next+1]), (words.[next+1] = "'") with
                                         // single word
                                         | false, false ->
@@ -72,7 +81,7 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                              words.[next+1], next'
                                         // string
                                         | false, true ->
-                                            let rec findBetweenQuotes position (value:string) ending = 
+                                            let rec findBetween position (value:string) ending = 
                                                 let ending' = ending + 1
                                                 match words.[position] with
                                                     | "'" -> value, ending'+2
@@ -82,10 +91,10 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                                             match value.Length with
                                                                 | 0 -> words.[position]
                                                                 | _ -> value + " " + words.[position]
-                                                        findBetweenQuotes position' value' ending'
+                                                        findBetween position' value' ending'
                                             let position = next + 2
-                                            let value2, ending2 = findBetweenQuotes position "" next
-                                            value2, ending2
+                                            let word, next' = findBetween position "" next
+                                            word, next'
                                         // single word from stack
                                         | true, false -> 
                                             let key = dictionary.Item words.[next+1]
@@ -152,13 +161,78 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                 next', dictionary, stack'
                             // -- If statements
                             // -- Loops
+                            | "while" ->
+                                let item1Key = dictionary.[words.[next+2]]
+                                let item1Value = stack.Item item1Key :?> string |> float  
+                                let item2Value = words.[next+4] |> float
+                                let conditionResult = conditionResult item1Value words.[next+3] item2Value
+                                let next' = match conditionResult with
+                                    | true -> 
+                                        let next' = next + 7
+                                        next'
+                                    | false -> 
+                                        let rec findClosingBracketPosition (words: string[]) next = 
+                                            match words.[next] with
+                                                | "}" -> 
+                                                    let next' = next + 1
+                                                    next'
+                                                | _ ->
+                                                    let next' = next + 1;
+                                                    findClosingBracketPosition words next'
+                                        let closingBracketPosition = findClosingBracketPosition words next
+                                        closingBracketPosition
+                                next', dictionary, stack
+                            | "}" ->
+                                let rec findOpenBracketPosition (words: string[]) next = 
+                                    match words.[next] with
+                                        | "{" -> 
+                                            let next' = next - 6
+                                            next'
+                                        | _ ->
+                                            let next' = next - 1;
+                                            findOpenBracketPosition words next'
+                                let next' = findOpenBracketPosition words next
+                                
+                                next', dictionary, stack
                             | _ ->
                                 let next', stack', dictionary' =  
                                     match words.[next+1] with
                                         // Change variable data
+                                        // Todo: Needs to be refactored
                                         | "=" -> 
                                             let key = stack.Count+1
                                             stack.Add(key, words.[next+2])
+                                            dictionary.[words.[next]] <- key
+                                            next+3, stack, dictionary
+                                        | "+=" ->
+                                            let key = stack.Count
+                                            let originalValue = stack.Item key :?> string |> float
+                                            let inputValue = words.[next+2] |> float 
+                                            let modifiedValue = (originalValue + inputValue) |> string
+                                            stack.[key] <- modifiedValue
+                                            next+3, stack, dictionary
+                                        | "-=" ->
+                                            let key = stack.Count+1
+                                            let originalValue = stack.Item key :?> string |> float
+                                            let inputValue = words.[next+2] |> float 
+                                            let modifiedValue = originalValue - inputValue
+                                            stack.Add(key, modifiedValue)
+                                            dictionary.[words.[next]] <- key
+                                            next+3, stack, dictionary
+                                        | "*=" ->
+                                            let key = stack.Count+1
+                                            let originalValue = stack.Item key :?> string |> float
+                                            let inputValue = words.[next+2] |> float 
+                                            let modifiedValue = originalValue * inputValue
+                                            stack.Add(key, modifiedValue)
+                                            dictionary.[words.[next]] <- key
+                                            next+3, stack, dictionary
+                                        | "/=" ->
+                                            let key = stack.Count+1
+                                            let originalValue = stack.Item key :?> string |> float
+                                            let inputValue = words.[next+2] |> float 
+                                            let modifiedValue = originalValue / inputValue
+                                            stack.Add(key, modifiedValue)
                                             dictionary.[words.[next]] <- key
                                             next+3, stack, dictionary
                                         | _ ->
