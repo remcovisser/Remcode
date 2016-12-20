@@ -24,6 +24,7 @@ dictionary.Add("+", -1)
 dictionary.Add("-", -1)
 dictionary.Add("/", -1)
 dictionary.Add("*", -1)
+dictionary.Add("%", -1)
 dictionary.Add("while", -1)
 dictionary.Add("endWhile", -1)
 dictionary.Add("if", -1)
@@ -46,6 +47,7 @@ let doMaths number1 number2 operator =
         | "-" -> number1 - number2
         | "/" -> number1 / number2
         | "*" -> number1 * number2
+        | "%" -> number1 % number2
 
 // Statements
 let statement var operator result =
@@ -56,6 +58,19 @@ let statement var operator result =
         | ">=" -> var >= result
         | "<" -> var < result
         | "<=" -> var <= result
+
+let updateDictionaryAndOrStack word value =
+    match dictionary.ContainsKey word with
+        // Update variable
+        | true ->
+            let key = dictionary.Item word
+            stack.Item key <- value
+        // Create variable
+        | false -> 
+            let key = stack.Count+1
+            stack.Add(key, value)
+            dictionary.Add(word, key)
+    ()
 
 // Get the value based on the input
 let getValue word =
@@ -105,7 +120,10 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                                         let value' =
                                                             match value.Length with
                                                                 | 0 -> words.[position]
-                                                                | _ -> value + " " + words.[position]
+                                                                | _ -> 
+                                                                    match value with
+                                                                        | "&space" -> " " + words.[position]
+                                                                        | _ -> value + " " + words.[position]
                                                         findBetween position' value' ending'
                                             let position = next + 2
                                             let value, next' = findBetween position "" next
@@ -117,29 +135,28 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                 next', dictionary, stack
                             // -- Variable creation
                             | "var" -> 
-                                let next', stack', key = 
+                                let next' = 
                                     match words.[next+2], words.[next+4] with
                                         // Math operator on variable creation
-                                        | "=", ("+" | "-" | "*" | "/") ->
+                                        | "=", ("+" | "-" | "*" | "/" | "%") ->
                                             let value1 = getValue words.[next+3] |> float
                                             let value2 = getValue words.[next+5] |> float
                                             let operator = words.[next+4]
                                             let result = doMaths value1 value2 operator
-                                            let key = stack.Count+1
-                                            stack.Add(key, result)
-                                            next+6, stack, key   
+                                            updateDictionaryAndOrStack words.[next+1] result
+                                            let next' = next+6   
+                                            next'
                                         // Variable creation with value
                                         | "=", _-> 
-                                            let key = stack.Count+1
-                                            stack.Add(key, words.[next+3])
+                                            updateDictionaryAndOrStack words.[next+1] words.[next+3]
                                             let next' = next+4
-                                            next', stack, key
+                                            next'
                                         // Variable creation without value
                                         | _ , _ -> 
+                                            updateDictionaryAndOrStack words.[next+1] -1
                                             let next' = next+2
-                                            next', stack, -1
-                                dictionary.Add(words.[next+1], key)
-                                next', dictionary, stack'
+                                            next'
+                                next', dictionary, stack
                             // -- If statements'
                             | "if" ->
                                 let item1 = getValue words.[next+1] |> float
@@ -226,7 +243,7 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                             let inputValue = getValue words.[next+2] |> float 
                                             let operator = words.[next+1].[0] |> string
                                             let modifiedValue = doMaths originalValue inputValue operator
-                                            let key = stack.Count
+                                            let key = dictionary.Item words.[next]
                                             stack.[key] <- modifiedValue
                                             next+3, stack, dictionary
                                         | _ ->

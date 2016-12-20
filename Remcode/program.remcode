@@ -1,38 +1,12 @@
-﻿printLine 200
-print ' The version is: '
-printLine version
-
-var y
-var z
-y = 20
-z = 30
-z = 40
-
-printLine y
-printLine z
-
-var a = 20 * 30
-var b = z + y
-var c = 20 * y
-var d = z * 30
-
-printLine a
-printLine b
-printLine c
-printLine d
-
-
-var l = 10
-if l = 20
-	printLine ' l = 10 '
-else
-	printLine ' l != 10 '
-endif
-
-
-var x = 0
+﻿var x = 0
 while x <= 100
-	print x
-	print ,
+	var temp = x % 2
+	if temp = 0
+		print x
+		printLine  ' &space is even ' 
+	else
+		print x
+		printLine ' &space is not even '
+	endif
 	x += 1
 endWhile
