@@ -21,9 +21,18 @@ printLine b
 printLine c
 printLine d
 
-var x = 1
-while ( x < 10 ) {
+
+var l = 10
+if l = 20
+	printLine ' l = 10 '
+else
+	printLine ' l != 10 '
+endif
+
+
+var x = 0
+while x <= 100
 	print x
 	print ,
 	x += 1
-}
+endWhile

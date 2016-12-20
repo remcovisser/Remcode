@@ -13,7 +13,7 @@ let getWords (text: string) =
     | Contains all the know keywords for the program 
     | Grows as the program is executed with new variables
     | Key       |> The unqiue value to indentify the element
-      Value     |> A the key of an element on the stack, only applies to variables, is empty string if not a variable
+      Value     |> The key of an element on the stack, only applies to variables, is -1 if not a variable
 *)
 let dictionary = new Dictionary<string, int>()
 dictionary.Add("var", -1)
@@ -25,7 +25,10 @@ dictionary.Add("-", -1)
 dictionary.Add("/", -1)
 dictionary.Add("*", -1)
 dictionary.Add("while", -1)
-dictionary.Add("}", -1)
+dictionary.Add("endWhile", -1)
+dictionary.Add("if", -1)
+dictionary.Add("else", -1)
+dictionary.Add("endif", -1)
 dictionary.Add("version", 0)
 
 (*  Define the base stack
@@ -45,12 +48,14 @@ let doMaths number1 number2 operator =
         | "*" -> number1 * number2
 
 // Statements
-let conditionResult var operator result =
+let statement var operator result =
     match operator with
         | "=" -> var = result
         | "!=" -> var <> result
         | ">" -> var > result
+        | ">=" -> var >= result
         | "<" -> var < result
+        | "<=" -> var <= result
 
 // Get the value based on the input
 let getValue word =
@@ -135,64 +140,96 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                             next', stack, -1
                                 dictionary.Add(words.[next+1], key)
                                 next', dictionary, stack'
-                            // -- If statements
-                            // -- Loops
-                            | "while" ->
-                                let item1 = getValue words.[next+2] |> float
-                                let item2 = getValue words.[next+4] |> float
-                                let operator = words.[next+3]
-                                let conditionResult = conditionResult item1 operator item2
+                            // -- If statements'
+                            | "if" ->
+                                let item1 = getValue words.[next+1] |> float
+                                let item2 = getValue words.[next+3] |> float
+                                let operator = words.[next+2]
+                                let conditionResult = statement item1 operator item2
                                 let next' =
                                     match conditionResult with
                                         | true -> 
-                                            let next' = next + 7
+                                            let next' = next + 4
                                             next'
                                         | false -> 
-                                            // Loop is done, go to the next step after the loop
-                                            let rec findClosingBracketPosition (words: string[]) next = 
+                                            // Find the beginning of the else block
+                                            let rec findElseBlock (words: string[]) next = 
                                                 match words.[next] with
-                                                    | "}" -> 
+                                                    | "else" -> 
                                                         let next' = next + 1
                                                         next'
                                                     | _ ->
                                                         let next' = next + 1;
-                                                        findClosingBracketPosition words next'
-                                            let closingBracketPosition = findClosingBracketPosition words next
-                                            closingBracketPosition
+                                                        findElseBlock words next'
+                                            let endWhilePosition = findElseBlock words next
+                                            endWhilePosition
                                 next', dictionary, stack
-                            | "}" ->
-                                // If at the end of a loop go back to see if the loop is finished
-                                let rec findOpenBracketPosition (words: string[]) next = 
+                            | "else" ->
+                                let rec findEndIf (words: string[]) next = 
                                     match words.[next] with
-                                        | "{" -> 
-                                            let next' = next - 6
+                                        | "endif" -> 
+                                            let next' = next + 1
                                             next'
                                         | _ ->
+                                            let next' = next + 1;
+                                            findEndIf words next'
+                                let next' = findEndIf words next
+                                next', dictionary, stack
+                            | "endif" ->
+                                let next' = next + 1
+                                next', dictionary, stack
+                            // -- Loops
+                            | "while" ->
+                                let item1 = getValue words.[next+1] |> float
+                                let item2 = getValue words.[next+3] |> float
+                                let operator = words.[next+2]
+                                let conditionResult = statement item1 operator item2
+                                let next' =
+                                    match conditionResult with
+                                        | true -> 
+                                            let next' = next + 4
+                                            next'
+                                        | false -> 
+                                            // Loop is done, go to the next step after the loop
+                                            let rec findEndOfWhilePosition (words: string[]) next = 
+                                                match words.[next] with
+                                                    | "endWhile" -> 
+                                                        let next' = next + 1
+                                                        next'
+                                                    | _ ->
+                                                        let next' = next + 1;
+                                                        findEndOfWhilePosition words next'
+                                            let endWhilePosition = findEndOfWhilePosition words next
+                                            endWhilePosition
+                                next', dictionary, stack
+                            | "endWhile" ->
+                                // If at the end of a loop go back to see if the loop is finished
+                                let rec findWhilePosition (words: string[]) next = 
+                                    match words.[next] with
+                                        | "while" -> next
+                                        | _ ->
                                             let next' = next - 1;
-                                            findOpenBracketPosition words next'
-                                let next' = findOpenBracketPosition words next              
+                                            findWhilePosition words next'
+                                let next' = findWhilePosition words next              
                                 next', dictionary, stack
                             | _ ->
                                 let next', stack', dictionary' =  
                                     match words.[next+1] with
                                         // Change variable data
-                                        // Todo: Needs to be refactored
                                         | "=" -> 
                                             let key = stack.Count+1
                                             stack.Add(key, words.[next+2])
                                             dictionary.[words.[next]] <- key
                                             next+3, stack, dictionary
                                         | "+=" | "-=" | "*=" | "/=" ->
-                                            let originalValue = getValue words.[next-3] |> float
+                                            let originalValue = getValue words.[next] |> float
                                             let inputValue = getValue words.[next+2] |> float 
                                             let operator = words.[next+1].[0] |> string
-                                            let result = doMaths originalValue inputValue operator
-                                            let modifiedValue = (originalValue + inputValue) |> string
+                                            let modifiedValue = doMaths originalValue inputValue operator
                                             let key = stack.Count
                                             stack.[key] <- modifiedValue
                                             next+3, stack, dictionary
                                         | _ ->
-                                            // If all the mathes failed
                                             printfn "\nError: Unknow action based on the word: %s in dictionary" currentWord 
                                             let next' = next + 1
                                             next', stack, dictionary
