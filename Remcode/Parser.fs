@@ -109,6 +109,7 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                         // Math operator on variable creation
                                         | "=", ("+" | "-" | "*" | "/") ->
                                             match (dictionary.ContainsKey words.[next+3]), (dictionary.ContainsKey words.[next+5]) with
+                                                // Variable, variable
                                                 | true, true ->
                                                     let key1 = dictionary.Item words.[next+3]
                                                     let value1 = stack.Item key1 :?> string |> float
@@ -118,6 +119,7 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                                     let key = stack.Count+1
                                                     stack.Add(key, result)
                                                     next+6, stack, key
+                                                // Variable, number
                                                 | true, false ->
                                                     let key1 = dictionary.Item words.[next+3]
                                                     let value1 = stack.Item key1 :?> string |> float
@@ -126,6 +128,7 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                                     let key = stack.Count+1
                                                     stack.Add(key, result)
                                                     next+6, stack, key
+                                                 // Number, variable
                                                  | false, true ->
                                                      let key2 = dictionary.Item words.[next+5]
                                                      let value1 = words.[next+3] |> float
@@ -134,6 +137,7 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                                      let key = stack.Count+1
                                                      stack.Add(key, result)
                                                      next+6, stack, key
+                                                // Number, number
                                                 | false, false ->
                                                     let value1 = words.[next+3] |> float
                                                     let value2 = words.[next+5] |> float
