@@ -1,4 +1,26 @@
 ﻿var x = 0
+var y = 0
+
+while x <= 10
+	print x
+	print :
+	print ' &space '
+	while y <= 10
+		print y
+		y += 1
+		if y > 10
+			break
+		else 
+			print ,
+		endif
+	endWhile
+	x += 1
+	var y = 0
+endWhile
+
+break break
+
+var x = 0
 while x <= 100
 	var temp = x % 2
 	if temp = 0

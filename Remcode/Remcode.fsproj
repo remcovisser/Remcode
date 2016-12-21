@@ -47,9 +47,9 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="program.remcode">
+    <Content Include="program.remcode">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="Program.fs" />

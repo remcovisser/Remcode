@@ -7,8 +7,8 @@ open System.IO
 
 
 let programInput = File.ReadAllText("program.remcode");
-let program = getWords programInput
+let program = getProgramContent programInput
 
-let programOutput = parser program dictionary 0 stack
+let programOutput = parser program 0
 
 Console.ReadLine();

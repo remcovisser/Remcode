@@ -2,15 +2,15 @@
 
 open System.Collections.Generic
 
-(*  Return a string Array with all the words of the programm 
-    | words are characters sepparted by a space
+(*  Return a string Array with all the program of the programm 
+    | program are characters sepparted by a space
     | spaces/breaks/tabs are removed *)
-let getWords (text: string) =
+let getProgramContent (text: string) =
      text.Split (' ','\n','\r','\t')
-     |> Array.filter(fun words -> words = "" |> not)
+     |> Array.filter(fun program -> program = "" |> not)
 
 (*  Define the base dictionary
-    | Contains all the know keywords for the program 
+    | Contains all the know keyprogram for the program 
     | Grows as the program is executed with new variables
     | Key       |> The unqiue value to indentify the element
       Value     |> The key of an element on the stack, only applies to variables, is -1 if not a variable
@@ -30,6 +30,7 @@ dictionary.Add("endWhile", -1)
 dictionary.Add("if", -1)
 dictionary.Add("else", -1)
 dictionary.Add("endif", -1)
+dictionary.Add("break", -1)
 dictionary.Add("version", 0)
 
 (*  Define the base stack
@@ -59,13 +60,15 @@ let statement var operator result =
         | "<" -> var < result
         | "<=" -> var <= result
 
+(*
+    true: if the variable already exists in the dictionary, only update the stack
+    false: If its a new variable, add item on the dictionary and the stack
+*)
 let updateDictionaryAndOrStack word value =
     match dictionary.ContainsKey word with
-        // Update variable
         | true ->
             let key = dictionary.Item word
             stack.Item key <- value
-        // Create variable
         | false -> 
             let key = stack.Count+1
             stack.Add(key, value)
@@ -84,46 +87,43 @@ let getValue word =
 (*
     Parser
 *)
-let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int) (stack: Dictionary<int, obj>) = 
+let rec parser (program: string[]) (next:int) = 
     // Check if the program is finished
-    match words.Length = next with 
+    match program.Length = next with 
         | true -> printfn "\nThe program has been executed" 
         | false ->
             // Set variable used mutiple times in the parser
-            let currentWord = words.[next] 
+            let currentWord = program.[next] 
             // Check if current word exists in the dictionary
             match dictionary.ContainsKey currentWord with
                 | false -> 
                     printfn "Error: Unknow word: %s" currentWord
                     let next' = next + 1
-                    parser words dictionary next' stack
+                    parser program next'
                 | true ->
-                    let next', dictionary', stack' = 
+                    let next' = 
                         match currentWord with
                             // -- Printing
                             | "print" | "printLine" -> 
                                 let value, next' =
-                                    match (words.[next+1] = "'") with
+                                    match (program.[next+1] = "'") with
                                         // single word
                                         | false ->
                                              let next' = next + 2
-                                             let value = getValue words.[next+1]
+                                             let value = getValue program.[next+1]
                                              value, next'
                                         // string
                                         |  true ->
                                             let rec findBetween position (value:string) ending = 
                                                 let ending' = ending + 1
-                                                match words.[position] with
+                                                match program.[position] with
                                                     | "'" -> value, ending'+2
                                                     | _ -> 
-                                                        let position' = position + 1
                                                         let value' =
-                                                            match value.Length with
-                                                                | 0 -> words.[position]
-                                                                | _ -> 
-                                                                    match value with
-                                                                        | "&space" -> " " + words.[position]
-                                                                        | _ -> value + " " + words.[position]
+                                                            match program.[position] with
+                                                                | "&space" -> value + " "
+                                                                | _ -> value + " " + program.[position]
+                                                        let position' = position + 1
                                                         findBetween position' value' ending'
                                             let position = next + 2
                                             let value, next' = findBetween position "" next
@@ -132,36 +132,41 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                 match currentWord with 
                                     | "print" -> printf "%s" value
                                     | "printLine" | _ -> printfn "%s" value
-                                next', dictionary, stack
+                                next'
+                            // Break
+                            | "break" ->
+                                printf "\n"
+                                let next' = next + 1
+                                next'
                             // -- Variable creation
                             | "var" -> 
                                 let next' = 
-                                    match words.[next+2], words.[next+4] with
+                                    match program.[next+2], program.[next+4] with
                                         // Math operator on variable creation
                                         | "=", ("+" | "-" | "*" | "/" | "%") ->
-                                            let value1 = getValue words.[next+3] |> float
-                                            let value2 = getValue words.[next+5] |> float
-                                            let operator = words.[next+4]
+                                            let value1 = getValue program.[next+3] |> float
+                                            let value2 = getValue program.[next+5] |> float
+                                            let operator = program.[next+4]
                                             let result = doMaths value1 value2 operator
-                                            updateDictionaryAndOrStack words.[next+1] result
+                                            updateDictionaryAndOrStack program.[next+1] result
                                             let next' = next+6   
                                             next'
                                         // Variable creation with value
                                         | "=", _-> 
-                                            updateDictionaryAndOrStack words.[next+1] words.[next+3]
+                                            updateDictionaryAndOrStack program.[next+1] program.[next+3]
                                             let next' = next+4
                                             next'
                                         // Variable creation without value
                                         | _ , _ -> 
-                                            updateDictionaryAndOrStack words.[next+1] -1
+                                            updateDictionaryAndOrStack program.[next+1] -1
                                             let next' = next+2
                                             next'
-                                next', dictionary, stack
+                                next'
                             // -- If statements'
                             | "if" ->
-                                let item1 = getValue words.[next+1] |> float
-                                let item2 = getValue words.[next+3] |> float
-                                let operator = words.[next+2]
+                                let item1 = getValue program.[next+1] |> float
+                                let item2 = getValue program.[next+3] |> float
+                                let operator = program.[next+2]
                                 let conditionResult = statement item1 operator item2
                                 let next' =
                                     match conditionResult with
@@ -170,36 +175,36 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                             next'
                                         | false -> 
                                             // Find the beginning of the else block
-                                            let rec findElseBlock (words: string[]) next = 
-                                                match words.[next] with
+                                            let rec findElseBlock (program: string[]) next = 
+                                                match program.[next] with
                                                     | "else" -> 
                                                         let next' = next + 1
                                                         next'
                                                     | _ ->
                                                         let next' = next + 1;
-                                                        findElseBlock words next'
-                                            let endWhilePosition = findElseBlock words next
+                                                        findElseBlock program next'
+                                            let endWhilePosition = findElseBlock program next
                                             endWhilePosition
-                                next', dictionary, stack
+                                next'
                             | "else" ->
-                                let rec findEndIf (words: string[]) next = 
-                                    match words.[next] with
+                                let rec findEndIf (program: string[]) next = 
+                                    match program.[next] with
                                         | "endif" -> 
                                             let next' = next + 1
                                             next'
                                         | _ ->
                                             let next' = next + 1;
-                                            findEndIf words next'
-                                let next' = findEndIf words next
-                                next', dictionary, stack
+                                            findEndIf program next'
+                                let next' = findEndIf program next
+                                next'
                             | "endif" ->
                                 let next' = next + 1
-                                next', dictionary, stack
+                                next'
                             // -- Loops
                             | "while" ->
-                                let item1 = getValue words.[next+1] |> float
-                                let item2 = getValue words.[next+3] |> float
-                                let operator = words.[next+2]
+                                let item1 = getValue program.[next+1] |> float
+                                let item2 = getValue program.[next+3] |> float
+                                let operator = program.[next+2]
                                 let conditionResult = statement item1 operator item2
                                 let next' =
                                     match conditionResult with
@@ -208,48 +213,66 @@ let rec parser (words: string[]) (dictionary: Dictionary<string, int>) (next:int
                                             next'
                                         | false -> 
                                             // Loop is done, go to the next step after the loop
-                                            let rec findEndOfWhilePosition (words: string[]) next = 
-                                                match words.[next] with
-                                                    | "endWhile" -> 
+                                            let rec findEndOfWhilePosition (program: string[]) next whileCount = 
+                                                match program.[next], whileCount with
+                                                    | "endWhile", 0 -> 
                                                         let next' = next + 1
                                                         next'
-                                                    | _ ->
+                                                    | "endWhile", _ -> 
                                                         let next' = next + 1;
-                                                        findEndOfWhilePosition words next'
-                                            let endWhilePosition = findEndOfWhilePosition words next
+                                                        let whileCount' = whileCount - 1
+                                                        findEndOfWhilePosition program next' whileCount'
+                                                    | "while", _ ->
+                                                        let next' = next + 1;
+                                                        let whileCount' = whileCount + 1
+                                                        findEndOfWhilePosition program next' whileCount'
+                                                    | _, _ ->
+                                                        let next' = next + 1;
+                                                        findEndOfWhilePosition program next' whileCount
+                                            let endWhilePosition = findEndOfWhilePosition program next -1
                                             endWhilePosition
-                                next', dictionary, stack
+                                next'
                             | "endWhile" ->
                                 // If at the end of a loop go back to see if the loop is finished
-                                let rec findWhilePosition (words: string[]) next = 
-                                    match words.[next] with
-                                        | "while" -> next
-                                        | _ ->
+                                let rec findWhilePosition (program: string[]) next whileCount = 
+                                    match program.[next], whileCount with
+                                        | "while", 0 -> next
+                                        | "while", _ -> 
                                             let next' = next - 1;
-                                            findWhilePosition words next'
-                                let next' = findWhilePosition words next              
-                                next', dictionary, stack
+                                            let whileCount' = whileCount - 1
+                                            findWhilePosition program next' whileCount'
+                                        | "endWhile", _ ->
+                                            let next' = next - 1;
+                                            let whileCount' = whileCount + 1
+                                            findWhilePosition program next' whileCount'
+                                        | _, _ ->
+                                            let next' = next - 1;
+                                            findWhilePosition program next' whileCount
+                                let next' = findWhilePosition program next -1             
+                                next'
                             | _ ->
-                                let next', stack', dictionary' =  
-                                    match words.[next+1] with
+                                let next' =  
+                                    match program.[next+1] with
                                         // Change variable data
                                         | "=" -> 
                                             let key = stack.Count+1
-                                            stack.Add(key, words.[next+2])
-                                            dictionary.[words.[next]] <- key
-                                            next+3, stack, dictionary
+                                            stack.Add(key, program.[next+2])
+                                            dictionary.[program.[next]] <- key
+                                            let next' = next + 3
+                                            next'
                                         | "+=" | "-=" | "*=" | "/=" ->
-                                            let originalValue = getValue words.[next] |> float
-                                            let inputValue = getValue words.[next+2] |> float 
-                                            let operator = words.[next+1].[0] |> string
+                                            let originalValue = getValue program.[next] |> float
+                                            let inputValue = getValue program.[next+2] |> float 
+                                            let operator = program.[next+1].[0] |> string
                                             let modifiedValue = doMaths originalValue inputValue operator
-                                            let key = dictionary.Item words.[next]
+                                            let key = dictionary.Item program.[next]
                                             stack.[key] <- modifiedValue
-                                            next+3, stack, dictionary
+                                            let next' = next + 3
+                                            next'
                                         | _ ->
                                             printfn "\nError: Unknow action based on the word: %s in dictionary" currentWord 
                                             let next' = next + 1
-                                            next', stack, dictionary
-                                next', dictionary, stack'
+                                            next'
+                                next'
                     // Go to the next step in the program
-                    parser words dictionary next' stack
+                    parser program next'
