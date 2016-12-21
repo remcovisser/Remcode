@@ -47,6 +47,9 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="test.remcode">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="program.remcode">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

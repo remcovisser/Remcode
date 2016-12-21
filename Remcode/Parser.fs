@@ -30,7 +30,8 @@ dictionary.Add("endWhile", -1)
 dictionary.Add("if", -1)
 dictionary.Add("else", -1)
 dictionary.Add("endif", -1)
-dictionary.Add("break", -1)
+dictionary.Add("breakLine", -1)
+dictionary.Add("//", -1)
 dictionary.Add("version", 0)
 
 (*  Define the base stack
@@ -92,26 +93,36 @@ let rec parser (program: string[]) (next:int) =
     match program.Length = next with 
         | true -> printfn "\nThe program has been executed" 
         | false ->
-            // Set variable used mutiple times in the parser
-            let currentWord = program.[next] 
             // Check if current word exists in the dictionary
-            match dictionary.ContainsKey currentWord with
+            match dictionary.ContainsKey program.[next] with
                 | false -> 
-                    printfn "Error: Unknow word: %s" currentWord
+                    printfn "Error: Unknow word: %s" program.[next]
                     let next' = next + 1
                     parser program next'
                 | true ->
                     let next' = 
-                        match currentWord with
+                        match program.[next] with
                             // -- Printing
                             | "print" | "printLine" -> 
                                 let value, next' =
                                     match (program.[next+1] = "'") with
                                         // single word
                                         | false ->
-                                             let next' = next + 2
-                                             let value = getValue program.[next+1]
-                                             value, next'
+                                            let value, next' =
+                                                match program.[next+2] with                                                
+                                                    | "+" | "-" | "*" | "/" | "%" ->
+                                                        let value1 = getValue program.[next+1] |> float
+                                                        let value2 = getValue program.[next+3] |> float
+                                                        let operator = program.[next+2]
+                                                        let result = doMaths value1 value2 operator
+                                                        let value = result |> string
+                                                        let next' = next+4   
+                                                        value, next'
+                                                    | _ ->
+                                                         let next' = next + 2
+                                                         let value = getValue program.[next+1]
+                                                         value, next'
+                                            value, next'
                                         // string
                                         |  true ->
                                             let rec findBetween position (value:string) ending = 
@@ -129,14 +140,24 @@ let rec parser (program: string[]) (next:int) =
                                             let value, next' = findBetween position "" next
                                             value, next'
                                 // Print the found value
-                                match currentWord with 
+                                match program.[next] with 
                                     | "print" -> printf "%s" value
                                     | "printLine" | _ -> printfn "%s" value
                                 next'
                             // Break
-                            | "break" ->
+                            | "breakLine" ->
                                 printf "\n"
                                 let next' = next + 1
+                                next'
+                            // Comment
+                            | "//" ->
+                                let rec findBetween position =   
+                                    match program.[position] with
+                                        | "\\\\" -> position+1
+                                        | _ -> 
+                                            let position' = position + 1
+                                            findBetween position'
+                                let next' = findBetween next
                                 next'
                             // -- Variable creation
                             | "var" -> 
@@ -162,16 +183,48 @@ let rec parser (program: string[]) (next:int) =
                                             let next' = next+2
                                             next'
                                 next'
-                            // -- If statements'
+                            // -- If statement'
                             | "if" ->
-                                let item1 = getValue program.[next+1] |> float
-                                let item2 = getValue program.[next+3] |> float
-                                let operator = program.[next+2]
-                                let conditionResult = statement item1 operator item2
+                                let item1, item2, operator, steps = 
+                                    match program.[next+2]  with 
+                                        | "=" | "!=" | "<=" | ">=" | "<" | ">" ->
+                                            let value1 = getValue program.[next+1] |> float
+                                            let value2, steps = 
+                                                match program.[next+4] with
+                                                    // x = y + z  
+                                                    | "+" | "-" | "/" | "*" | "%" ->
+                                                        let value1 = getValue program.[next+3] |> float
+                                                        let value2 = getValue program.[next+5] |> float
+                                                        let operator = program.[next+4]
+                                                        doMaths value1 value2 operator , 6
+                                                    // x = y
+                                                    | _ -> 
+                                                        getValue program.[next+3] |> float , 4  
+                                            let operator = program.[next+2]
+                                            value1, value2, operator, steps
+                                        | _ ->
+                                            let value1 = getValue program.[next+1] |> float
+                                            let value2 = getValue program.[next+3] |> float
+                                            let mathOperator = program.[next+2]
+                                            let value1 = doMaths value1 value2 mathOperator 
+                                            let value2, steps = 
+                                                match program.[next+6] with
+                                                    //  y + z = y + z
+                                                    | "+" | "-" | "/" | "*" | "%" ->
+                                                        let value1 = getValue program.[next+5] |> float
+                                                        let value2 = getValue program.[next+7] |> float
+                                                        let operator = program.[next+6]
+                                                        doMaths value1 value2 operator, 8 
+                                                    // y + z = x
+                                                    | _ -> 
+                                                        getValue program.[next+5] |> float, 6
+                                            let operator = program.[next+4]   
+                                            value1, value2, operator, steps
+                                let comparisonResult = statement item1 operator item2
                                 let next' =
-                                    match conditionResult with
+                                    match comparisonResult with
                                         | true -> 
-                                            let next' = next + 4
+                                            let next' = next + steps
                                             next'
                                         | false -> 
                                             // Find the beginning of the else block
@@ -183,8 +236,8 @@ let rec parser (program: string[]) (next:int) =
                                                     | _ ->
                                                         let next' = next + 1;
                                                         findElseBlock program next'
-                                            let endWhilePosition = findElseBlock program next
-                                            endWhilePosition
+                                            let endElseBlockPosition = findElseBlock program next
+                                            endElseBlockPosition
                                 next'
                             | "else" ->
                                 let rec findEndIf (program: string[]) next = 
@@ -200,14 +253,14 @@ let rec parser (program: string[]) (next:int) =
                             | "endif" ->
                                 let next' = next + 1
                                 next'
-                            // -- Loops
+                            // -- Loop
                             | "while" ->
                                 let item1 = getValue program.[next+1] |> float
                                 let item2 = getValue program.[next+3] |> float
                                 let operator = program.[next+2]
-                                let conditionResult = statement item1 operator item2
+                                let comparisonResult = statement item1 operator item2
                                 let next' =
-                                    match conditionResult with
+                                    match comparisonResult with
                                         | true -> 
                                             let next' = next + 4
                                             next'
@@ -270,7 +323,7 @@ let rec parser (program: string[]) (next:int) =
                                             let next' = next + 3
                                             next'
                                         | _ ->
-                                            printfn "\nError: Unknow action based on the word: %s in dictionary" currentWord 
+                                            printfn "\nError: Unknow action based on the word: %s in dictionary" program.[next] 
                                             let next' = next + 1
                                             next'
                                 next'

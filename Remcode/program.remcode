@@ -9,7 +9,7 @@ while x <= 10
 		print y
 		y += 1
 		if y > 10
-			break
+			breakLine
 		else 
 			print ,
 		endif
@@ -18,12 +18,11 @@ while x <= 10
 	var y = 0
 endWhile
 
-break break
+breakLine breakLine
 
 var x = 0
 while x <= 100
-	var temp = x % 2
-	if temp = 0
+	if x % 2 = 0
 		print x
 		printLine  ' &space is even ' 
 	else

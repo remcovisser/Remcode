@@ -1,0 +1,36 @@
+﻿// Variable declaration \\
+var a
+a = 0
+print a
+
+var b = 1
+printLine b
+
+var c = b * 2
+printLine c
+
+var d = b + c
+printLine d
+
+// Variable modification \\
+d = 4
+printLine d
+
+d += 1
+printLine d
+
+// Printing data \\
+printLine 6
+printLine 7
+printLine 8
+breakLine
+printLine 9
+printLine ' 10 - 11 '
+printLine ' &space 12 '
+
+// Basic math operations \\
+printLine 12 + 1
+printLine 13 * 1
+printLine 15 - 1
+printLine 30 / 2
+printLine 254 % 17
