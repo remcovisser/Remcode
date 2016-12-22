@@ -1,33 +1,86 @@
-﻿var x = 0
+﻿// Pyramid \\
+var x = 0
 var y = 0
 
 while x <= 10
-	print x
-	print :
-	print ' &space '
 	while y <= 10
-		print y
-		y += 1
-		if y > 10
-			breakLine
-		else 
-			print ,
+		if y < 10
+			if y - x < 0
+				print @		
+			else
+				print ' &space '
+			endif
 		endif
+		y += 1
 	endWhile
+
+	breakLine
 	x += 1
-	var y = 0
+	y = 0
 endWhile
 
-breakLine breakLine
+breakLine
 
+// Reverse pyramid \\
 var x = 0
-while x <= 100
-	if x % 2 = 0
-		print x
-		printLine  ' &space is even ' 
-	else
-		print x
-		printLine ' &space is not even '
-	endif
+var y = 0
+
+while x <= 10
+	while y <= 10
+		if y < 10
+			if x - y <= 0
+				print @
+			else
+				print ' &space '
+			endif
+		endif
+		y += 1
+	endWhile
+
+	breakLine
 	x += 1
+	y = 0
+endWhile
+
+// Square \\
+var x = 0
+var y = 0
+
+while x <= 10
+	while y <= 10
+		print @
+		y += 1
+	endWhile
+	breakLine
+	x += 1
+	y = 0
+endWhile
+
+breakLine
+
+// Circel \\
+var x = 10
+var y = 10
+var pi = 3.14
+var radius = 5
+
+while x >= 0
+	var xx = x - radius
+	var xResult = xx * xx
+	while y >= 0
+		var yy = y - radius
+		var yResult = yy * yy
+		var xyResultSum = xResult + yResult
+		var finalResult = 0 sqrt xyResultSum
+
+		if finalResult < radius
+			print @
+		else
+			print ' &space '
+		endif
+		y -= 1
+	endWhile
+	breakLine
+	x -= 1
+	y = 10
 endWhile

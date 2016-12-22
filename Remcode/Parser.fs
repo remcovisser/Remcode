@@ -51,6 +51,7 @@ let doMaths number1 number2 operator =
         | "*" -> number1 * number2
         | "%" -> number1 % number2
         | "=" -> number2
+        | "sqrt" -> sqrt number2
 
 // conditions
 let condition var operator result =
@@ -63,7 +64,7 @@ let condition var operator result =
         | "<=" -> var <= result
      
 // Specific operators
-let arithmeticOperators = ["+"; "-"; "/"; "*"; "%"]
+let arithmeticOperators = ["+"; "-"; "/"; "*"; "%"; "sqrt"]
 let relationalOperators = ["="; "!="; ">"; ">="; "<"; ]
 let modifyingOperators = [ "="; "+="; "-="; "/="; "*="]
 (*
@@ -96,7 +97,7 @@ let getValue word =
 let rec parser (program: string[]) (next:int) = 
     // Check if the program is finished
     match program.Length = next with 
-        | true -> printfn "\nThe program has been executed" 
+        | true -> printfn "\nRemcode program has been executed" 
         | false ->
             // Check if current word exists in the dictionary
             match dictionary.ContainsKey program.[next] with
