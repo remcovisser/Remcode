@@ -1,23 +1,25 @@
-﻿// Variable declaration \\
+﻿//
+	If the test passes it prints an incremental suquence of numbers
+\\
+
+// Variable declaration \\
 var a
 a = 0
 print a
-
 var b = 1
 printLine b
-
 var c = b * 2
 printLine c
-
 var d = b + c
 printLine d
+
 
 // Variable modification \\
 d = 4
 printLine d
-
 d += 1
 printLine d
+
 
 // Printing data \\
 printLine 6
@@ -28,9 +30,46 @@ printLine 9
 printLine ' 10 - 11 '
 printLine ' &space 12 '
 
+
 // Basic math operations \\
 printLine 12 + 1
-printLine 13 * 1
 printLine 15 - 1
 printLine 30 / 2
 printLine 254 % 17
+printLine 17 * 1
+
+
+// If statements \\
+var x = 10
+var y = 20
+if x = y
+	printLine ' Error on line 42: this statement should be false ' 
+else
+	printLine 18
+endif
+
+if x != y + x
+	printLine 19
+else
+	printLine ' Error on line 48: this statement should be false ' 
+endif
+
+if y + x = x
+	printLine ' Error on line 54: this statement should be false ' 
+else
+	printLine 20
+endif
+
+if y + x = x + y
+	printLine 21
+else
+	printLine ' Error on line 62: this statement should be false ' 
+endif
+
+
+// While loops \\
+var x = 22
+while x <= 25
+	printLine x
+	x += 1
+endWhile
