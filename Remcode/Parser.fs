@@ -41,7 +41,6 @@ dictionary.Add("version", 0)
 let stack = new Dictionary<int, obj>()
 stack.Add(0, 0.01)
 
-
 // Keep track of the programCounter when calling functions
 let programCounter = new List<int>()
 
@@ -90,13 +89,16 @@ let updateDictionaryAndOrStack word value =
 
 // Get the value based on the input
 let getValue word =
-    match (dictionary.ContainsKey word) with
-        | true -> 
+    match (dictionary.ContainsKey word), (tempStack.ContainsKey word) with
+        | true, false -> 
             let key = dictionary.Item word
             let value = stack.Item key |> string
             value
-        | false ->
+        | false, false ->
             word
+        | _, true ->
+            let value = tempStack.Item word |> string
+            value
 (*
     Parser
 *)

@@ -1,7 +1,6 @@
 ﻿defineFunction 
 	aFunctionName paramter1 paramter2 =
-		printLine hallo
-
+		printLine paramter1 + paramter2
 endDefineFunction
 
 callFunction 
