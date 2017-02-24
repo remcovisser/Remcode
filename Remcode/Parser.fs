@@ -20,11 +20,6 @@ dictionary.Add("var", -1)
 dictionary.Add("=", -1)
 dictionary.Add("print", -1)
 dictionary.Add("printLine", -1)
-dictionary.Add("+", -1)
-dictionary.Add("-", -1)
-dictionary.Add("/", -1)
-dictionary.Add("*", -1)
-dictionary.Add("%", -1)
 dictionary.Add("while", -1)
 dictionary.Add("endWhile", -1)
 dictionary.Add("if", -1)
@@ -32,6 +27,11 @@ dictionary.Add("else", -1)
 dictionary.Add("endif", -1)
 dictionary.Add("breakLine", -1)
 dictionary.Add("//", -1)
+dictionary.Add("defineFunction", -1)
+dictionary.Add("endDefineFunction", -1)
+dictionary.Add("return", -1)
+dictionary.Add("callFunction", -1)
+dictionary.Add("endCallFunction", -1)
 dictionary.Add("version", 0)
 
 (*  Define the base stack
@@ -41,6 +41,12 @@ dictionary.Add("version", 0)
 let stack = new Dictionary<int, obj>()
 stack.Add(0, 0.01)
 
+
+// Keep track of the programCounter when calling functions
+let programCounter = new List<int>()
+
+// Store temp variables
+let tempStack = new Dictionary<string, obj>()
 
 // Math operators
 let doMaths number1 number2 operator = 
@@ -270,6 +276,44 @@ let rec parser (program: string[]) (next:int) =
                                         | _, _ -> findWhilePosition program (next-1) whileCount
                                 let next' = findWhilePosition program next -1             
                                 next'
+                            // Skip function, only execute when it is called not when it is defined
+                            | "defineFunction" ->
+                                let rec findEndDefineFunction (program: string[]) next = 
+                                    match program.[next] with
+                                        | "endDefineFunction" -> 
+                                            let next' = next + 1
+                                            next'
+                                        | _ -> 
+                                            let next' = next + 1
+                                            findEndDefineFunction program next'
+                                let next' = findEndDefineFunction program next
+                                next'
+                            // Go to the function, store to paramters in the tempStack
+                            | "callFunction" -> 
+                                let rec findParamters (program: string[]) next =
+                                    match program.[next] with
+                                        | "endCallFunction" -> next
+                                        | _ -> 
+                                            let next' = next + 1
+                                            findParamters program next'
+                                let paramtersStart = next + 2
+                                let paramtersEnd = findParamters program next
+                                let rec findFunction (program: string[]) functionNamePosition next =
+                                    match System.String.Equals(program.[next], program.[functionNamePosition]) with
+                                        | true -> next
+                                        | false -> 
+                                            let next' = next - 1
+                                            findFunction program functionNamePosition next'
+                                let functionNamePosition = next + 1
+                                let functionPosition = findFunction program functionNamePosition next
+                                for i in 0..paramtersEnd-paramtersStart-1 do
+                                    let name = program.[functionPosition + 1 + i]
+                                    let value = program.[next + 2 + i]
+                                    tempStack.Add(name, value)
+                                    ()
+                                let next' = paramtersEnd + 1
+                                next'
+                            | "return" -> next+1
                             | _ ->
                                 let next' =  
                                     match List.contains program.[next+1] modifyingOperators with

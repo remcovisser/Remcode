@@ -1,4 +1,14 @@
-﻿//
+﻿defineFunction 
+	aFunctionName paramter1 paramter2 =
+		var result = parameter1 + paramter2
+		return result
+endDefineFunction
+
+callFunction 
+	aFunctionName 10 20 
+endCallFunction
+
+//
 	If the test passes it prints an incremental suquence of numbers
 \\
 

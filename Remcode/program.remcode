@@ -59,10 +59,11 @@ endWhile
 breakLine
 
 // Circel \\
-var x = 10
-var y = 10
+
 var pi = 3.14
 var radius = 5
+var x = 10
+var y = 10
 
 while x >= 0
 	var xx = x - radius
@@ -72,7 +73,6 @@ while x >= 0
 		var yResult = yy * yy
 		var xyResultSum = xResult + yResult
 		var finalResult = 0 sqrt xyResultSum
-
 		if finalResult < radius
 			print @
 		else
