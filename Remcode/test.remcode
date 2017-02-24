@@ -1,7 +1,7 @@
 ﻿defineFunction 
 	aFunctionName paramter1 paramter2 =
-		var result = parameter1 + paramter2
-		return result
+		printLine hallo
+
 endDefineFunction
 
 callFunction 

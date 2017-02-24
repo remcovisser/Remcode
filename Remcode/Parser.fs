@@ -288,6 +288,9 @@ let rec parser (program: string[]) (next:int) =
                                             findEndDefineFunction program next'
                                 let next' = findEndDefineFunction program next
                                 next'
+                            // Reached the end of a function
+                            | "endDefineFunction" ->
+                                programCounter.[0]
                             // Go to the function, store to paramters in the tempStack
                             | "callFunction" -> 
                                 let rec findParamters (program: string[]) next =
@@ -311,8 +314,18 @@ let rec parser (program: string[]) (next:int) =
                                     let value = program.[next + 2 + i]
                                     tempStack.Add(name, value)
                                     ()
-                                let next' = paramtersEnd + 1
-                                next'
+                                let pc = paramtersEnd + 1
+                                programCounter.Add(pc)
+                                let rec findBeginningOfFunctionLogic (program: string[]) next =
+                                    match program.[next] with
+                                        | "=" -> 
+                                            let next' = next + 1
+                                            next'
+                                        | _ -> 
+                                            let next' = next + 1
+                                            findBeginningOfFunctionLogic program next'
+                                let nextz = findBeginningOfFunctionLogic program functionPosition
+                                nextz
                             | "return" -> next+1
                             | _ ->
                                 let next' =  
