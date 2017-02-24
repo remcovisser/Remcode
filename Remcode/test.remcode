@@ -1,13 +1,4 @@
-﻿defineFunction 
-	aFunctionName paramter1 paramter2 =
-		printLine paramter1 + paramter2
-endDefineFunction
-
-callFunction 
-	aFunctionName 10 20 
-endCallFunction
-
-//
+﻿//
 	If the test passes it prints an incremental suquence of numbers
 \\
 
@@ -82,3 +73,23 @@ while x <= 25
 	printLine x
 	x += 1
 endWhile
+
+
+// Functions \\
+defineFunction 
+	aFunctionName paramter1 paramter2 =
+		printLine paramter1 + paramter2
+endDefineFunction
+
+defineFunction 
+	bFunctionName paramter1 paramter2 =
+		printLine paramter1 - paramter2
+endDefineFunction
+
+callFunction 
+	aFunctionName 6 20 
+endCallFunction
+
+callFunction 
+	bFunctionName 30 3 
+endCallFunction

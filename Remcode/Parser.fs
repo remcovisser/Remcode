@@ -292,7 +292,10 @@ let rec parser (program: string[]) (next:int) =
                                 next'
                             // Reached the end of a function
                             | "endDefineFunction" ->
-                                programCounter.[0]
+                                tempStack.Clear()
+                                let next' = programCounter.[0]
+                                programCounter.Clear()
+                                next'
                             // Go to the function, store to paramters in the tempStack
                             | "callFunction" -> 
                                 let rec findParamters (program: string[]) next =
